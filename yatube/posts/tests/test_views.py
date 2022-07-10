@@ -92,8 +92,8 @@ class PostPagesTest(TestCase):
     def test_create_and_edit_post_page_show_correct_context(self):
         responses = (self.authorized_client.get(
             reverse("posts:post_edit", kwargs={"post_id": self.post.pk})),
-                     self.authorized_client.get(reverse("posts:post_create"))
-        )
+                 self.authorized_client.get(reverse("posts:post_create"))
+            )
         form_fields = {
             "text": forms.fields.CharField,
             "group": forms.fields.ChoiceField,
