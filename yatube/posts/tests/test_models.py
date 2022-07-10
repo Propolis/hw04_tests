@@ -58,4 +58,4 @@ class PostModelTest(TestCase):
             with self.subTest(field=field):
                 self.assertEqual(
                      post._meta.get_field(field).help_text, expected_value
-                )
+                     )
