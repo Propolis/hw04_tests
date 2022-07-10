@@ -67,8 +67,10 @@ class StaticURLTests(TestCase):
 
     @unittest.skip
     def test_post_edit_url_redirect_not_author_on_post_detail(self):
-        """Страница /posts/<post_id>/edit/ перенаправит не автора на страницу /posts/<post_id>/"""
-        response = self.authorized_client_not_author.get(f"/posts/{self.post.pk}/edit/")
+        """Страница /posts/<post_id>/edit/ перенаправит не автора на страницу
+        /posts/<post_id>/"""
+        response = self.authorized_client_not_author.get(
+            f"/posts/{self.post.pk}/edit/")
         self.assertRedirects(
             response, f'/posts/{self.post.pk}/'
         )

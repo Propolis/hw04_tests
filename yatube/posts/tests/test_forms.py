@@ -49,7 +49,10 @@ class TaskCreateFormTests(TestCase):
                 group_id=self.group.id
             ).exists()
         )
-        self.assertRedirects(response, reverse("posts:profile", kwargs={"username": self.user.username}))
+        self.assertRedirects(
+            response,
+            reverse("posts:profile", kwargs={"username": self.user.username})
+        )
 
     def test_edit_post(self):
         data = {

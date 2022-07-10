@@ -93,7 +93,7 @@ class PostPagesTest(TestCase):
         responses = (self.authorized_client.get(
             reverse("posts:post_edit", kwargs={"post_id": self.post.pk})),
                      self.authorized_client.get(reverse("posts:post_create"))
-                     )
+                    )
         form_fields = {
             "text": forms.fields.CharField,
             "group": forms.fields.ChoiceField,
@@ -107,7 +107,8 @@ class PostPagesTest(TestCase):
     def test_create_post(self):
         pages = (reverse("posts:index"),
                  reverse("posts:group_list", kwargs={"slug": self.group.slug}),
-                 reverse("posts:profile", kwargs={"username": self.user.username}),
+                 reverse(
+                     "posts:profile", kwargs={"username": self.user.username}),
                  )
         for page in pages:
             with self.subTest(page=page):
