@@ -40,10 +40,18 @@ class PostPagesTest(TestCase):
         templates_pages_names = {
             reverse("posts:index"): "posts/index.html",
             reverse("posts:post_create"): "posts/create_post.html",
-            reverse("posts:group_list", kwargs={"slug": self.group.slug}): "posts/group_list.html",
-            reverse("posts:profile", kwargs={"username": self.user.username}): "posts/profile.html",
-            reverse("posts:post_detail", kwargs={"post_id": self.post.id}): "posts/post_detail.html",
-            reverse("posts:post_edit", kwargs={"post_id": self.post.id}): "posts/create_post.html",
+            reverse(
+                "posts:group_list",
+                kwargs={"slug": self.group.slug}): "posts/group_list.html",
+            reverse(
+                "posts:profile",
+                kwargs={"username": self.user.username}): "posts/profile.html",
+            reverse(
+                "posts:post_detail",
+                kwargs={"post_id": self.post.id}): "posts/post_detail.html",
+            reverse(
+                "posts:post_edit",
+                kwargs={"post_id": self.post.id}): "posts/create_post.html",
         }
         for url, template in templates_pages_names.items():
             with self.subTest(url=url):
@@ -58,14 +66,16 @@ class PostPagesTest(TestCase):
         self.assertEqual(second_object.text, "Текст1")
 
     def test_group_list_page_show_correct_context(self):
-        response = self.authorized_client.get(reverse("posts:group_list", kwargs={"slug": self.group.slug}))
+        response = self.authorized_client.get(
+            reverse("posts:group_list", kwargs={"slug": self.group.slug}))
         objects = response.context["page_obj"]
         for obj in objects:
             with self.subTest(object=obj):
                 self.assertEqual(obj.group.slug, self.group.slug)
 
     def test_profile_page_show_correct_context(self):
-        response = self.authorized_client.get(reverse("posts:profile", kwargs={"username": self.user.username}))
+        response = self.authorized_client.get(
+            reverse("posts:profile", kwargs={"username": self.user.username}))
         objects = response.context["page_obj"]
         for obj in objects:
             with self.subTest(object=obj):
@@ -73,13 +83,15 @@ class PostPagesTest(TestCase):
         self.assertEqual(objects[0].text, "Текст1")
 
     def test_post_detail_page_show_correct_context(self):
-        response = self.authorized_client.get(reverse("posts:post_detail", kwargs={"post_id": self.post.pk}))
+        response = self.authorized_client.get(
+            reverse("posts:post_detail", kwargs={"post_id": self.post.pk}))
         objects = response.context["post"]
         self.assertIsInstance(objects, Post)
         self.assertEqual(objects.text, "Текст1")
 
     def test_create_and_edit_post_page_show_correct_context(self):
-        responses = (self.authorized_client.get(reverse("posts:post_edit", kwargs={"post_id": self.post.pk})),
+        responses = (self.authorized_client.get(
+            reverse("posts:post_edit", kwargs={"post_id": self.post.pk})),
                      self.authorized_client.get(reverse("posts:post_create"))
                      )
         form_fields = {
@@ -102,7 +114,8 @@ class PostPagesTest(TestCase):
                 response = self.authorized_client.get(page)
                 objects = response.context.get("page_obj")
                 self.assertIn(self.post, objects)
-        response = self.authorized_client.get(reverse("posts:group_list", kwargs={"slug": self.group_2.slug}))
+        response = self.authorized_client.get(
+            reverse("posts:group_list", kwargs={"slug": self.group_2.slug}))
         objects = response.context.get("page_obj")
         self.assertNotIn(self.post, objects)
 
