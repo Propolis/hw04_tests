@@ -46,7 +46,7 @@ class TaskCreateFormTests(TestCase):
         self.assertTrue(
             Post.objects.filter(
                 text="Текст",
-                group_id=self.group.id
+                group_id=self.group.id,
             ).exists()
         )
         self.assertRedirects(
