@@ -153,9 +153,15 @@ class PaginatorViewsTest(TestCase):
         for i in range(3):
             with self.subTest(page=pages[i]):
                 response = self.client.get(pages[i])
-                self.assertEqual(len(response.context["page_obj"]), NUMBER_POSTS)
+                self.assertEqual(
+                    len(response.context["page_obj"]),
+                    NUMBER_POSTS
+                )
 
         for i in range(3):
             with self.subTest(page=pages[i]):
                 response = self.client.get(pages[i] + "?page=2")
-                self.assertEqual(len(response.context["page_obj"]), COUNT_PAGINATOR_POSTS - NUMBER_POSTS)
+                self.assertEqual(
+                    len(response.context["page_obj"]),
+                    COUNT_PAGINATOR_POSTS - NUMBER_POSTS
+                )
