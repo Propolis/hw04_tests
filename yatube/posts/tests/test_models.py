@@ -18,7 +18,7 @@ class PostModelTest(TestCase):
         )
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовая пост',
+            text="Текст" * 10,
         )
 
     def test_models_have_correct_object_names(self):
@@ -27,7 +27,7 @@ class PostModelTest(TestCase):
         post = self.post
         field_object_names = {
             group.title: str(group),
-            post.text[:15]: str(post)
+            post.text[:post.print_text_lenght]: str(post)
         }
         for value, expected in field_object_names.items():
             with self.subTest(value=value):
