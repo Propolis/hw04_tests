@@ -33,7 +33,7 @@ class TaskCreateFormTests(TestCase):
     def setUp(self) -> None:
         self.guest_client = Client()
 
-    def test_create_post(self):
+    def test_create_post_authorized_client(self):
         count_posts_before = Post.objects.count()
         data = {
             "text": "Текст",
@@ -44,24 +44,31 @@ class TaskCreateFormTests(TestCase):
             data=data,
             follow=True,
         )
+
         count_posts_after = Post.objects.count()
         self.assertEqual(count_posts_after, count_posts_before + 1)
         post = Post.objects.latest("pub_date")
         self.assertEqual(post.text, data["text"])
-        self.assertEqual(post.group_id, data["group"])
+        self.assertEqual(post.group, self.group)
         self.assertEqual(post.author_id, self.user.id)
         self.assertRedirects(
             response,
             reverse("posts:profile", kwargs={"username": self.user.username})
         )
-        count_posts_before = count_posts_after
+
+    def test_create_post_authorized_client(self):
+        count_posts_before = Post.objects.count()
+        data = {
+            "text": "Текст",
+            "group": self.group.id
+        }
         response = self.guest_client.post(
             reverse("posts:post_create"),
             data=data,
             follow=True,
         )
         count_posts_after = Post.objects.count()
-        self.assertEqual(count_posts_after, count_posts_before)
+        self.assertEqual(count_posts_before, count_posts_after)
         self.assertRedirects(
             response,
             "/auth/login/?next=/create/",
@@ -70,7 +77,7 @@ class TaskCreateFormTests(TestCase):
     def test_edit_post(self):
         data = {
             "text": "Новый текст",
-            "group": self.group_2.id
+            "group": self.group_2.id,
         }
         response = self.authorized_client.post(
             reverse("posts:post_edit", kwargs={"post_id": self.post.id}),

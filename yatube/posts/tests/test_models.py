@@ -27,7 +27,7 @@ class PostModelTest(TestCase):
         post = self.post
         field_object_names = {
             group.title: str(group),
-            post.text[:post.print_text_lenght]: str(post)
+            post.text[:post.PRINT_TEXT_LENGHT]: str(post)
         }
         for value, expected in field_object_names.items():
             with self.subTest(value=value):

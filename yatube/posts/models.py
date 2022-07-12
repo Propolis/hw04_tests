@@ -49,10 +49,10 @@ class Post(models.Model):
         on_delete=models.CASCADE,
         related_name="posts",
     )
-    print_text_lenght = 15
+    PRINT_TEXT_LENGHT = 15
 
     def __str__(self):
-        return self.text[:self.print_text_lenght]
+        return self.text[:self.PRINT_TEXT_LENGHT]
 
     class Meta:
         ordering = ["-pub_date"]
