@@ -23,12 +23,13 @@ class Group(models.Model):
 
 
 class Post(models.Model):
+    PRINT_TEXT_LENGHT = 15
     pub_date = models.DateTimeField(
-        'Дата публикации',
+        verbose_name='Дата публикации',
         auto_now_add=True,
     )
     text = models.TextField(
-        'Текст поста',
+        verbose_name='Текст поста',
         help_text='Введите текст поста',
         blank=True,
         null=True,
@@ -49,7 +50,11 @@ class Post(models.Model):
         on_delete=models.CASCADE,
         related_name="posts",
     )
-    PRINT_TEXT_LENGHT = 15
+    image = models.ImageField(
+        verbose_name='Картинка',
+        upload_to='posts/',
+        blank=True
+    )
 
     def __str__(self):
         return self.text[:self.PRINT_TEXT_LENGHT]

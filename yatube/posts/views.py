@@ -50,7 +50,11 @@ def post_edit(request, post_id):
     if post.author != request.user:
         return redirect("posts:post_detail", post_id)
     template = "posts/create_post.html"
-    form = PostForm(request.POST or None, instance=post)
+    form = PostForm(
+        request.POST or None,
+        instance=post,
+        files=request.FILES or None,
+    )
     if form.is_valid():
         form.save()
         return redirect("posts:post_detail", post_id)

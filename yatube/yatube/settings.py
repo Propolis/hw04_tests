@@ -25,6 +25,12 @@ SECRET_KEY = 'd3-wr2lk7c(n-8p03^5wsd83#g@ds)9j$hfo18n!di7@keoa&2'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
@@ -51,6 +57,7 @@ INSTALLED_APPS = [
     'posts.apps.PostsConfig',
     'users.apps.UsersConfig',
     'about.apps.AboutConfig',
+    'sorl.thumbnail',
 ]
 
 MIDDLEWARE = [
