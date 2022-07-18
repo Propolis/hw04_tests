@@ -1,5 +1,5 @@
 from django import forms
-from .models import Post, Group
+from .models import Post, Group, Comments
 
 
 class PostForm(forms.ModelForm):
@@ -23,3 +23,9 @@ class PostForm(forms.ModelForm):
         if data.replace(" ", "") == "":
             raise forms.ValidationError('Это поле должно быть заполнено.')
         return data
+
+
+class CommentsForm(forms.ModelForm):
+    class Meta:
+        model = Comments
+        fields = "__all__"

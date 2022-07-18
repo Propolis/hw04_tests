@@ -1,20 +1,38 @@
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+import shutil
 
 from ..models import Post, Group
 from ..forms import PostForm
 from ..views import NUMBER_POSTS
+from .test_forms import TEMP_MEDIA_ROOT
 
 User = get_user_model()
 
 COUNT_PAGINATOR_POSTS = 13
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostPagesTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+        cls.uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
         cls.group = Group.objects.create(
             title="Название группы",
             description="Описание",
@@ -30,6 +48,7 @@ class PostPagesTest(TestCase):
             text="Текст1",
             author_id=cls.user.id,
             group_id=cls.group.id,
+            image=cls.uploaded,
         )
         cls.authorized_client = Client()
         cls.authorized_client.force_login(cls.user)
@@ -38,6 +57,11 @@ class PostPagesTest(TestCase):
             text="Текст2",
             author_id=cls.user_2.id,
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_pages_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
@@ -64,12 +88,14 @@ class PostPagesTest(TestCase):
 
     def test_index_page_show_correct_context(self):
         response = self.authorized_client.get(reverse("posts:index"))
+        context = response.context
         expected_key = "page_obj"
-        self.assertIn(expected_key, response.context)
-        first_object = response.context["page_obj"][0]
-        second_object = response.context["page_obj"][1]
+        self.assertIn(expected_key, context)
+        first_object = context["page_obj"][0]
+        second_object = context["page_obj"][1]
         self.assertEqual(first_object.text, self.post_2.text)
         self.assertEqual(second_object.text, self.post.text)
+        self.assertEqual(second_object.image.name, "posts/" + self.uploaded.name)
 
     def test_group_list_page_show_correct_context(self):
         response = self.authorized_client.get(
@@ -78,6 +104,7 @@ class PostPagesTest(TestCase):
         for obj in objects:
             with self.subTest(object=obj):
                 self.assertEqual(obj.group.slug, self.group.slug)
+        self.assertEqual(objects[0].image.name, "posts/" + self.uploaded.name)
 
     def test_profile_page_show_correct_context(self):
         response = self.authorized_client.get(
@@ -87,6 +114,7 @@ class PostPagesTest(TestCase):
             with self.subTest(object=obj):
                 self.assertEqual(obj.author.username, self.user.username)
         self.assertEqual(objects[0].text, self.post.text)
+        self.assertEqual(objects[0].image.name, "posts/" + self.uploaded.name)
 
     def test_post_detail_page_show_correct_context(self):
         response = self.authorized_client.get(
@@ -94,6 +122,7 @@ class PostPagesTest(TestCase):
         objects = response.context["post"]
         self.assertIsInstance(objects, Post)
         self.assertEqual(objects.text, self.post.text)
+        self.assertEqual(objects.image.name, "posts/" + self.uploaded.name)
 
     def test_create_and_edit_post_page_show_correct_context(self):
         responses = (
