@@ -1,5 +1,5 @@
 from django import forms
-from .models import Post, Group, Comments
+from .models import Post, Group, Comment
 
 
 class PostForm(forms.ModelForm):
@@ -11,7 +11,7 @@ class PostForm(forms.ModelForm):
     group = forms.ModelChoiceField(
         queryset=Group.objects.all(),
         required=False,
-        label="Группа"
+        label="Группа",
     )
 
     class Meta:
@@ -25,7 +25,7 @@ class PostForm(forms.ModelForm):
         return data
 
 
-class CommentsForm(forms.ModelForm):
+class CommentForm(forms.ModelForm):
     class Meta:
-        model = Comments
-        fields = "__all__"
+        model = Comment
+        fields = ("text",)

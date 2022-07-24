@@ -132,3 +132,30 @@ class PostsCreateFormTests(TestCase):
             response,
             reverse("posts:post_detail", kwargs={"post_id": self.post.id})
         )
+
+    def test_add_comment(self):
+        data = {"text": "Здрасте" * 10}
+        self.authorized_client.post(
+            reverse("posts:add_comment", kwargs={"post_id": self.post.id}),
+            data=data,
+            follow=True,
+        )
+        response = self.guest_client.get(
+            reverse("posts:post_detail",
+                    kwargs={"post_id": self.post.id}
+                    )
+        )
+        comments = response.context["comments"]
+        self.assertEqual(comments[0].text, data["text"])
+
+    def test_guest_client_can_not_creat_comment(self):
+        post = self.post
+        count_comments_before = post.comments.count()
+        data = {"text": "Текст комментария"}
+        self.guest_client.post(
+            reverse("posts:add_comment", kwargs={"post_id": post.id}),
+            data=data,
+            follow=True,
+        )
+        count_comments_after = post.comments.count()
+        self.assertEqual(count_comments_before, count_comments_after)

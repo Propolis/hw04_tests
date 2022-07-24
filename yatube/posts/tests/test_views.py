@@ -2,10 +2,11 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.cache import cache
 
 import shutil
 
-from ..models import Post, Group
+from ..models import Post, Group, Follow
 from ..forms import PostForm
 from ..views import NUMBER_POSTS
 from .test_forms import TEMP_MEDIA_ROOT
@@ -50,13 +51,20 @@ class PostPagesTest(TestCase):
             group_id=cls.group.id,
             image=cls.uploaded,
         )
-        cls.authorized_client = Client()
-        cls.authorized_client.force_login(cls.user)
+        cls.authorized_client_creator_post = Client()
+        cls.authorized_client_creator_post.force_login(cls.user)
         cls.user_2 = User.objects.create_user(username="user_2")
         cls.post_2 = Post.objects.create(
             text="Текст2",
             author_id=cls.user_2.id,
         )
+        cls.authorized_client_2 = Client()
+        cls.authorized_client_2.force_login(cls.user_2)
+
+    def setUp(self) -> None:
+        user = User.objects.create_user(username="User0")
+        self.authorized_client = Client()
+        self.authorized_client.force_login(user)
 
     @classmethod
     def tearDownClass(cls):
@@ -77,14 +85,18 @@ class PostPagesTest(TestCase):
             reverse(
                 "posts:post_detail",
                 kwargs={"post_id": self.post.id}): "posts/post_detail.html",
-            reverse(
-                "posts:post_edit",
-                kwargs={"post_id": self.post.id}): "posts/create_post.html",
         }
         for url, template in templates_pages_names.items():
             with self.subTest(url=url):
                 response = self.authorized_client.get(url)
                 self.assertTemplateUsed(response, template)
+
+        response = self.authorized_client_creator_post.get(
+            reverse(
+                "posts:post_edit",
+                kwargs={"post_id": self.post.id}))
+        template = "posts/create_post.html"
+        self.assertTemplateUsed(response, template)
 
     def test_index_page_show_correct_context(self):
         response = self.authorized_client.get(reverse("posts:index"))
@@ -126,7 +138,7 @@ class PostPagesTest(TestCase):
 
     def test_create_and_edit_post_page_show_correct_context(self):
         responses = (
-            self.authorized_client.get(
+            self.authorized_client_creator_post.get(
                 reverse("posts:post_edit", kwargs={"post_id": self.post.pk})),
             self.authorized_client.get(reverse("posts:post_create")),
         )
@@ -150,6 +162,56 @@ class PostPagesTest(TestCase):
         objects = response.context.get("page_obj")
         self.assertNotIn(self.post, objects)
 
+    def test_cache(self):
+        post = Post.objects.create(
+            author=self.user,
+            text="Текст",
+        )
+        response = self.authorized_client.get(reverse("posts:index"))
+        content_before = response.content
+        post.delete()
+        response = self.authorized_client.get(reverse("posts:index"))
+        content_after = response.content
+        self.assertEqual(content_before, content_after)
+        cache.clear()
+        response = self.authorized_client.get(reverse("posts:index"))
+        content_after = response.content
+        self.assertNotEqual(content_before, content_after)
+
+    def test_profile_follow_and_unfollow(self):
+        """Авторизованный пользователь может подписываться на других
+        пользователей и удалять их из подписок."""
+        self.authorized_client_creator_post.get(
+            reverse("posts:profile_follow", kwargs={"username": self.user_2.username})
+        )
+        follow = Follow.objects.filter(user=self.user, author=self.user_2).exists()
+        self.assertTrue(follow)
+        self.authorized_client_creator_post.get(
+            reverse("posts:profile_unfollow", kwargs={"username": self.user_2.username})
+        )
+        follow = Follow.objects.filter(user=self.user, author=self.user_2).exists()
+        self.assertFalse(follow)
+
+    def test_follow_post(self):
+        """Новая запись пользователя появляется в ленте тех, кто
+        на него подписан и не появляется в ленте тех, кто не подписан."""
+        self.authorized_client_creator_post.get(
+            reverse("posts:profile_follow",
+                    kwargs={"username": self.user_2.username})
+        )
+        response = self.authorized_client_creator_post.get(reverse("posts:follow_index"))
+        self.assertIn(self.post_2, response.context["page_obj"])
+        response = self.authorized_client_2.get(reverse("posts:follow_index"))
+        self.assertNotIn(self.post, response.context["page_obj"])
+
+    def test_subscribe_on_yourself(self):
+        self.authorized_client.get(
+            reverse("posts:profile_follow",
+                    kwargs={"username": self.user.username})
+        )
+        follow = Follow.objects.filter(user=self.user, author=self.user).exists()
+        self.assertFalse(follow)
+
 
 class PaginatorViewsTest(TestCase):
     @classmethod
@@ -160,9 +222,7 @@ class PaginatorViewsTest(TestCase):
             description="Описание",
             slug="test-slug"
         )
-        cls.user = User.objects.create_user(username="Aboba")
-        cls.client = Client()
-        cls.client.force_login(cls.user)
+        cls.user = User.objects.create_user(username="User1")
         objs = [
             Post(
                 text="Текст" + str(i),
@@ -173,6 +233,11 @@ class PaginatorViewsTest(TestCase):
         ]
         Post.objects.bulk_create(objs=objs)
 
+    def setUp(self) -> None:
+        user = User.objects.create_user(username="User")
+        self.auhtorized_client = Client()
+        self.auhtorized_client.force_login(user)
+
     def test_paginator_for_all_pages(self):
         pages = (
             reverse("posts:index"),
@@ -181,7 +246,7 @@ class PaginatorViewsTest(TestCase):
         )
         for i in range(3):
             with self.subTest(page=pages[i]):
-                response = self.client.get(pages[i])
+                response = self.auhtorized_client.get(pages[i])
                 self.assertEqual(
                     len(response.context["page_obj"]),
                     NUMBER_POSTS
@@ -189,7 +254,7 @@ class PaginatorViewsTest(TestCase):
 
         for i in range(3):
             with self.subTest(page=pages[i]):
-                response = self.client.get(pages[i] + "?page=2")
+                response = self.auhtorized_client.get(pages[i] + "?page=2")
                 self.assertEqual(
                     len(response.context["page_obj"]),
                     COUNT_PAGINATOR_POSTS - NUMBER_POSTS

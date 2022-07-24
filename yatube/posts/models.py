@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
+from core.models import CreatedModel
+
 User = get_user_model()
 
 
@@ -22,12 +24,9 @@ class Group(models.Model):
         return self.title
 
 
-class Post(models.Model):
+class Post(CreatedModel):
     PRINT_TEXT_LENGHT = 15
-    pub_date = models.DateTimeField(
-        verbose_name='Дата публикации',
-        auto_now_add=True,
-    )
+
     text = models.TextField(
         verbose_name='Текст поста',
         help_text='Введите текст поста',
@@ -63,7 +62,7 @@ class Post(models.Model):
         ordering = ["-pub_date"]
 
 
-class Comments(models.Model):
+class Comment(CreatedModel):
     text = models.TextField(
         max_length=1500,
         blank=True,
@@ -84,7 +83,18 @@ class Comments(models.Model):
         on_delete=models.CASCADE,
         related_name="comments",
     )
-    created = models.DateTimeField(
-        verbose_name='Дата публикации',
-        auto_now_add=True,
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        User,
+        verbose_name='Подписчик',
+        on_delete=models.CASCADE,
+        related_name="follower",
+    )
+    author = models.ForeignKey(
+        User,
+        verbose_name='Автор',
+        on_delete=models.CASCADE,
+        related_name="following",
     )
